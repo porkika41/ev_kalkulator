@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="KATA, átalányadó és VSZJA összehasonlítása a 2026-os szabályok és a 2027-es KATA-tervezet alapján. Helyben számoló magyar kalkulátor.">
+  <meta name="color-scheme" content="light dark">
+  <title>EV Mérleg — Adózz átgondoltan.</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#calculator">Ugrás a kalkulátorhoz</a>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="EV Mérleg, kezdőlap"><span class="brand-icon" aria-hidden="true">év.</span><span>EV <strong>Mérleg</strong></span></a>
+    <nav aria-label="Fő navigáció"><a class="nav-active" href="#calculator">Kalkulátor</a><a href="#methodology">Módszertan</a></nav>
+    <button class="icon-button" id="theme-toggle" type="button" aria-label="Sötét megjelenés bekapcsolása" aria-pressed="false"><span aria-hidden="true">◐</span></button>
+  </header>
+  <main class="container">
+    <section class="intro" aria-labelledby="page-title">
+      <h1 id="page-title">Adózási kalkulátor</h1>
+      <p>KATA · Átalányadózás · VSZJA</p>
+    </section>
+    <aside class="disclaimer" aria-label="A számítás jogi háttere"><span class="notice-icon" aria-hidden="true">i</span><div><strong id="mode-notice">2026-os szabályok · Ellenőrizve: 2026. október 10.</strong> <span id="mode-description">Teljes éves, egyenletes működésre, adókedvezmények nélkül számolunk. A jogosultsági feltételeket az adatbekérőben adhatod meg.</span> Nem minősül hivatalos NAV adótanácsadásnak. <a href="#methodology">Módszertan és források ↗</a></div></aside>
+    <noscript><p class="disclaimer">A kalkulátor használatához engedélyezd a JavaScriptet a böngésződben.</p></noscript>
+    <div class="workspace" id="calculator">
+      <aside class="controls card" aria-labelledby="controls-title">
+        <div class="section-heading"><h2 id="controls-title">A vállalkozásod</h2><button class="text-button" id="reset" type="button">Alaphelyzet</button></div>
+        <p class="section-subtitle">Állítsd be a rád jellemző adatokat.</p>
+        <form id="tax-form" novalidate>
+          <fieldset><legend>00 <span>Adóév és szabályok</span></legend>
+            <div class="segmented stacked">
+              <label><input type="radio" name="mode" value="current" checked><span>2026 – hatályos szabályok<small>50 ezer Ft-os KATA, 45%-os általános költséghányad</small></span></label>
+              <label><input type="radio" name="mode" value="draft"><span>2027 – KATA-tervezet szimulációja<small>Egyeztetési szöveg, még nem elfogadott törvény</small></span></label>
+            </div>
+            <div id="draft-settings" hidden>
+              <label class="field-label" for="kata-version">Tervezeti KATA-választás</label>
+              <select id="kata-version"><option value="new">Új rendszer – B2B lehetőséggel</option><option value="legacy">Régi KATA folytatása – átmeneti 75 ezer Ft/hó</option></select>
+              <p class="input-hint">Az átmeneti mód a korábbi KATA jogszerű folytatását feltételezi. A régi B2B-korlátozás megmarad.</p>
+              <details class="advanced"><summary>2027-es bérfeltételezések</summary>
+                <p class="input-hint">A 2027-es bérértékek itt szerkeszthető becslések. Alapértékük a 2026-os összeg; az eredmény nem igazolt 2027-es bérminimumokra épül.</p>
+                <label class="field-label" for="future-min">Feltételezett minimálbér / hó</label><div class="money-input"><input id="future-min" type="text" inputmode="numeric" aria-describedby="future-min-error"><span>Ft</span></div><p class="input-error" id="future-min-error" aria-live="polite"></p>
+                <label class="field-label" for="future-guaranteed">Feltételezett garantált bérminimum / hó</label><div class="money-input"><input id="future-guaranteed" type="text" inputmode="numeric" aria-describedby="future-guaranteed-error"><span>Ft</span></div><p class="input-error" id="future-guaranteed-error" aria-live="polite"></p>
+              </details>
+            </div>
+          </fieldset>
+          <fieldset><legend>01 <span>Bevétel</span></legend>
+            <div class="segmented compact" aria-label="A bevétel időszaka">
+              <label><input type="radio" name="period" value="monthly" checked><span>Havi bevétel</span></label>
+              <label><input type="radio" name="period" value="annual"><span>Éves bevétel</span></label>
+            </div>
+            <label class="sr-only" for="revenue">Bevétel forintban</label>
+            <div class="money-input large"><input id="revenue" type="text" inputmode="numeric" value="800 000" autocomplete="off" aria-describedby="revenue-hint revenue-error"><span id="revenue-unit">Ft / hó</span></div>
+            <label class="sr-only" for="revenue-range">Bevétel beállítása csúszkával</label>
+            <input id="revenue-range" type="range" min="100000" max="2500000" step="any" value="800000">
+            <div class="range-labels"><span id="range-min">100 ezer Ft</span><span id="range-max">2,5 millió Ft</span></div>
+            <p class="input-hint" id="revenue-hint">Éves bevétel: <strong id="annual-equivalent">9 600 000 Ft</strong> · áfa nélkül</p>
+            <p class="input-error" id="revenue-error" aria-live="polite"></p>
+          </fieldset>
+          <fieldset><legend>02 <span>Jogviszony</span></legend>
+            <div class="segmented stacked">
+              <label><input type="radio" name="employment" value="full" checked><span>Főállású egyéni vállalkozó<small>Minimum járulékfizetési kötelezettséggel</small></span></label>
+              <label><input type="radio" name="employment" value="side"><span>Mellékállású vállalkozó<small>Heti 36+ órás munkaviszony vagy nappali hallgatói jogviszony</small></span></label>
+              <label><input type="radio" name="employment" value="retired" aria-describedby="retired-note"><span>Nyugdíjas vállalkozó<small>Kiegészítő tevékenység: saját TB és üzleti szocho nélkül</small></span></label>
+            </div>
+            <p class="input-hint" id="retired-note" hidden>Saját jogú nyugdíjas (a Nők 40 alapján is), vagy az öregségi nyugdíjkorhatárt betöltött, özvegyi nyugdíjban részesülő EV. A korhatár előtti ellátás és a rokkantsági ellátás önmagában nem ilyen jogállás. A számítás kedvezmények nélküli: az anyák SZJA-kedvezményét és a nyugdíjas anyák külön szochoszabályait nem kezeli.</p>
+          </fieldset>
+          <fieldset><legend>03 <span>Ügyfélkör</span></legend>
+            <div class="segmented stacked">
+              <label><input type="radio" name="clients" value="mixed" checked><span>Cégek és magánszemélyek<small>B2B + B2C számlázás</small></span></label>
+              <label><input type="radio" name="clients" value="private"><span>Kizárólag magánszemélyek<small>B2C számlázás</small></span></label>
+            </div>
+            <p class="info-pill" id="b2b-note">A 2026-os KATA kifizetői bevétel mellett főszabály szerint nem alkalmazható.</p>
+            <div id="payer-settings">
+              <label class="field-label" for="b2b-share">Kifizetői bevétel aránya</label><div class="money-input"><input id="b2b-share" type="number" min="0" max="100" step="0.1" value="100" aria-describedby="b2b-share-hint b2b-share-error"><span>%</span></div><p class="input-error" id="b2b-share-error" aria-live="polite"></p>
+              <p class="input-hint" id="b2b-share-hint">Cégek, más vállalkozók és külföldi kifizetők; a jogszabály szerinti kifizető fogalma irányadó.</p>
+              <div id="draft-payer-settings" hidden>
+                <label class="field-label" for="largest-payer">Legnagyobb kifizető és kapcsolt köre</label><div class="money-input"><input id="largest-payer" type="number" min="0" max="100" step="0.1" value="40" aria-describedby="largest-payer-hint largest-payer-error"><span>összbevétel %</span></div><p class="input-error" id="largest-payer-error" aria-live="polite"></p>
+                <p class="input-hint" id="largest-payer-hint">Legalább 50%-nál a tervezet szerint év végén megszűnne a KATA-jogállás. A közvetítőkön keresztüli teljesítés is számít.</p>
+                <label class="check-label"><input id="employer-client" type="checkbox"><span>Bevétel jelenlegi vagy 24 hónapon belüli volt munkáltatótól, jogutódjától / kapcsolt vállalkozásától</span></label>
+                <details class="advanced"><summary>Vegyes bevétel a 22 milliós keret felett</summary>
+                  <label class="field-label" for="excess-share">A keret feletti bevétel kifizetői hányada</label><div class="money-input"><input id="excess-share" type="number" min="0" max="100" step="0.1" placeholder="Nem ismert" aria-describedby="excess-hint excess-share-error"><span>%</span></div><p class="input-error" id="excess-share-error" aria-live="polite"></p>
+                  <p class="input-hint" id="excess-hint">Csak vegyes bevételnél szükséges, igazolt elszámolás alapján. Üresen adótartományt mutatunk, és a KATA-t nem rangsoroljuk a bizonytalan szakaszon. A grafikon ezen arány változatlanságát feltételezi.</p>
+                </details>
+              </div>
+            </div>
+            <details class="advanced"><summary>KATA-jogosultság</summary>
+              <label class="field-label" for="kata-eligibility">Alapfeltételek</label><select id="kata-eligibility"><option value="unknown">Még nem ellenőriztem</option><option value="yes">Ellenőriztem, teljesülnek</option><option value="no">Nem teljesülnek</option></select>
+              <p class="input-hint">Nyilvántartott EV; nincs kizáró adószámtörlés, ingatlan-bérbeadási bevétel vagy újraválasztási tilalom. Az átmeneti módhoz a régi KATA folytatásának feltételei is szükségesek. A teljes éves összehasonlítás nem kezeli az évközi megszűnést.</p>
+              <label class="check-label" id="taxi-setting"><input id="taxi" type="checkbox"><span>A kifizetői bevétel kizárólag a hatályos KATA taxis kivételébe tartozik</span></label>
+            </details>
+          </fieldset>
+          <fieldset><legend>04 <span>Átalányadó beállításai</span></legend>
+            <label class="field-label" for="cost-ratio">Tevékenység szerinti költséghányad</label>
+            <select id="cost-ratio" aria-describedby="ratio-hint">
+              <option value="general">45% – Általános tevékenységek, IT, tanácsadás</option>
+              <option value="80">80% – A törvényben felsorolt tevékenységek</option>
+              <option value="90">90% – Kizárólagos kiskereskedelem, törvényi feltételekkel</option>
+            </select>
+            <p class="input-hint" id="ratio-hint">A magasabb költséghányad választása a törvényi tevékenységi és kizárólagossági feltételek teljesülését feltételezi. Nem minden kereskedelem 80%-os; a mezőgazdasági EV nem automatikusan 90%-os.</p>
+            <fieldset id="skill-fieldset" class="nested"><legend class="field-label">Minimum járulékalap</legend>
+              <div class="segmented stacked">
+                <label><input type="radio" name="skill" value="guaranteed" checked><span>Garantált bérminimum<small id="guaranteed-label">Szakképzettséget igénylő főtevékenység · 373 200 Ft/hó</small></span></label>
+                <label><input type="radio" name="skill" value="minimum"><span>Minimálbér<small id="minimum-label">322 800 Ft/hó</small></span></label>
+              </div>
+            </fieldset>
+            <p class="input-hint" id="floor-note">Főállásban a TB és a szocho minimumalapja a választott béralap 100%-a.</p>
+          </fieldset>
+          <fieldset><legend>05 <span>Tényleges működési költségek</span></legend>
+            <label class="field-label" for="expenses">Tényleges havi működési kiadás</label>
+            <div class="money-input"><input id="expenses" type="text" inputmode="numeric" value="50 000" autocomplete="off" aria-describedby="expenses-hint expenses-error"><span>Ft / hó</span></div>
+            <label class="sr-only" for="expenses-range">Havi költség beállítása csúszkával</label>
+            <input id="expenses-range" type="range" min="0" max="2500000" step="1" value="50000">
+            <p class="input-hint" id="expenses-hint">Mindhárom formánál levonjuk a zsebben maradó összegből. Saját adók, járulékok és vállalkozói kivét nélkül; a VSZJA adózási költsége külön megadható.</p>
+            <p class="input-error" id="expenses-error" aria-live="polite"></p>
+          </fieldset>
+          <fieldset><legend>06 <span>Iparűzési adó</span></legend>
+              <label class="field-label" for="hipa-method">Azonos HIPA-módszer a három formánál</label><select id="hipa-method"><option value="simplified">Választott egyszerűsített adóalap, jogosultság esetén</option><option value="normal">Normál adóalap</option></select>
+              <p class="input-hint">A módszerválasztás és a bejelentési határidő teljesülését feltételezzük. A jogosultsági határ felett normál módszerrel számolunk.</p>
+              <div class="field-pair"><div><label class="field-label" for="hipa-rate">Helyi adókulcs</label><div class="money-input"><input id="hipa-rate" type="number" min="0" max="2" step="0.01" value="2" aria-describedby="hipa-rate-error"><span>%</span></div><p class="input-error" id="hipa-rate-error" aria-live="polite"></p></div><div><label class="field-label" for="towns">Települések száma</label><input id="towns" class="plain-input" type="number" min="1" max="20" step="1" value="1" aria-describedby="towns-error"><p class="input-error" id="towns-error" aria-live="polite"></p></div></div>
+              <p class="input-hint">Azonos helyi kulcsot feltételezünk. Egyszerűsített módszernél az adóalap településenként értendő; normál módszernél a teljes, megosztandó adóalapra számolunk. Helyi kedvezményeket nem alkalmazunk.</p>
+              <label class="field-label" for="materials">Havi igazolt HIPA-csökkentő tételek</label>
+              <div class="money-input"><input id="materials" type="text" inputmode="numeric" value="0" autocomplete="off" aria-describedby="materials-hint materials-error"><span>Ft / hó</span></div>
+              <p class="input-hint" id="materials-hint">Normál módszerhez: ELÁBÉ, anyagköltség, jogosult közvetített szolgáltatás, alvállalkozói teljesítés, K+F közvetlen költség. Könyvelő által ellenőrzött összeget adj meg; a bérlet és a hardver nem automatikusan levonható.</p>
+              <p class="input-error" id="materials-error" aria-live="polite"></p>
+          </fieldset>
+          <fieldset><legend>07 <span>VSZJA részletei</span></legend>
+            <label class="field-label" for="withdrawal">Havi bruttó vállalkozói kivét</label><div class="money-input"><input id="withdrawal" type="text" inputmode="numeric" aria-describedby="withdrawal-hint withdrawal-error"><span>Ft / hó</span></div><p class="input-error" id="withdrawal-error" aria-live="polite"></p><p class="input-hint" id="withdrawal-hint">Nem külső kiadás: a saját jövedelmed része. Csökkenti a vállalkozói adóalapot; 15% SZJA és a jogviszony szerinti járulékok terhelik.</p>
+            <label class="field-label" for="other-income">Más, szochokeretbe beszámító éves jövedelem</label><div class="money-input"><input id="other-income" type="text" inputmode="numeric" aria-describedby="other-income-hint other-income-error"><span>Ft / év</span></div><p class="input-error" id="other-income-error" aria-live="polite"></p><p class="input-hint" id="other-income-hint">Például éves bruttó munkabér és más beszámító jövedelem. A nyugdíjat ne add meg: nem fogyasztja az osztalékszocho keretét. A fenti kivétet ne add hozzá újra; azt nyugdíjasként is automatikusan figyelembe vesszük.</p>
+            <details class="advanced"><summary>Adózási költségek és korrekciók</summary>
+              <label class="check-label"><input id="costs-linked" type="checkbox" checked><span>Minden működési kiadás az adott évben elszámolható</span></label>
+              <label class="field-label" for="deductible-costs">Éves elszámolható működési költség</label><div class="money-input"><input id="deductible-costs" type="text" inputmode="numeric" aria-describedby="deductible-costs-hint deductible-costs-error"><span>Ft / év</span></div><p class="input-error" id="deductible-costs-error" aria-live="polite"></p><p class="input-hint" id="deductible-costs-hint">Értékcsökkenéssel együtt, saját kivét és automatikus adóköltség nélkül. Eszközvásárlásnál kapcsold ki az összekötést, és az adott évi levonható összeget add meg.</p>
+              <label class="field-label" for="tax-cost-mode">Adóévben levonható saját szocho és HIPA</label><select id="tax-cost-mode"><option value="estimate">Becslés: a számolt éves üzleti szocho és HIPA</option><option value="actual">Ténylegesen megfizetett, elszámolható összeg</option></select>
+              <div id="paid-tax-setting" hidden><label class="field-label" for="paid-tax-costs">Igazolt éves adóköltség</label><div class="money-input"><input id="paid-tax-costs" type="text" inputmode="numeric" aria-describedby="paid-tax-costs-error"><span>Ft / év</span></div><p class="input-error" id="paid-tax-costs-error" aria-live="polite"></p></div>
+              <p class="input-hint">A becslés nem követi a befizetések naptári időzítését, és nem tartalmaz korábbi évre megállapított, idén befizetett osztalékszochót. A tényleges módba könyvelő által igazolt, adóévben megfizetett és levonható saját szocho, HIPA írható. Saját TB és SZJA nem vonható le; ne számold el ugyanazt az adót a működési költségben is.</p>
+              <label class="field-label" for="profit-adjustment">Vállalkozói jövedelem nettó korrekciója</label><div class="money-input"><input id="profit-adjustment" type="text" inputmode="decimal" aria-describedby="profit-adjustment-error"><span>Ft / év, ±</span></div><p class="input-error" id="profit-adjustment-error" aria-live="polite"></p>
+              <label class="field-label" for="loss">Felhasználni kívánt elhatárolt veszteség</label><div class="money-input"><input id="loss" type="text" inputmode="numeric" aria-describedby="loss-hint loss-error"><span>Ft / év</span></div><p class="input-error" id="loss-error" aria-live="polite"></p><p class="input-hint" id="loss-hint">Csak jogszerűen felhasználható veszteség. Az általános 50%-os korlátot alkalmazzuk; speciális mezőgazdasági és régi veszteségszabályokat nem kezelünk.</p>
+              <label class="field-label" for="minimum-treatment">Jövedelemminimum kezelése</label><select id="minimum-treatment"><option value="minimum">Alacsony jövedelemnél a 2%-os minimumalap</option><option value="declaration">Bevallást kiegészítő nyilatkozatot teszek</option><option value="exempt">Igazolt törvényi kivétel vonatkozik rám</option></select>
+              <label class="field-label" for="comparison-adjustment">Hasonlítási alap korrekciója</label><div class="money-input"><input id="comparison-adjustment" type="text" inputmode="decimal" aria-describedby="comparison-adjustment-error"><span>Ft / év, ±</span></div><p class="input-error" id="comparison-adjustment-error" aria-live="polite"></p>
+              <label class="field-label" for="dividend-adjustment">Osztalékalap nettó korrekciója</label><div class="money-input"><input id="dividend-adjustment" type="text" inputmode="decimal" aria-describedby="dividend-adjustment-hint dividend-adjustment-error"><span>Ft / év, ±</span></div><p class="input-error" id="dividend-adjustment-error" aria-live="polite"></p><p class="input-hint" id="dividend-adjustment-hint">A korrekciókat könyvelő által megállapított összeggel töltsd ki. Nem számítunk automatikusan beruházási kedvezményt vagy egyéb speciális adókedvezményt.</p>
+            </details>
+          </fieldset>
+          <p class="input-hint scope-note">Teljes, 12 hónapos működés, egyenletes bevétel és kivét, változatlan jogviszony. A nyugdíjas, kiegészítő tevékenység támogatott. Külföldi biztosítást, személyi adókedvezményeket és az anyák kedvezményének külön szabályait nem kezeljük.</p>
+        </form>
+        <div class="privacy-note"><span aria-hidden="true">⌁</span> Helyben számolunk. Nincs adatküldés vagy követőkód.</div>
+      </aside>
+      <section class="results" aria-label="A szimuláció eredménye">
+        <div class="results-heading"><h2>Így alakul a mérleg</h2><span class="status-badge"><span class="live-dot" aria-hidden="true"></span> Élő számítás</span></div>
+        <section class="verdict" aria-labelledby="verdict-title">
+          <div class="eyebrow">A MODELL SZERINT LEGTÖBB MARAD NÁLAD</div>
+          <div class="verdict-top"><h3 id="verdict-title">Számítás…</h3><span class="verdict-icon" aria-hidden="true">↗</span></div>
+          <p id="verdict-summary"></p>
+          <div class="verdict-metrics"><div><span>Éves előny</span><strong id="annual-advantage">—</strong></div><div><span>Havi átlagos előny</span><strong id="monthly-advantage">—</strong></div></div>
+          <p class="verdict-footnote">A második legjobb modellhez képest, azonos működési költségek mellett.</p>
+        </section>
+        <p id="result-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        <div id="scenario-notes" class="scenario-notes"></div>
+        <div id="summary-cards" class="summary-grid"></div>
+        <aside class="card partner-strip" aria-labelledby="partners-title">
+          <div class="partner-strip-main">
+            <div class="partner-copy"><span class="partner-label">Ajánlói link</span><h3 id="partners-title">Céget is működtetsz?</h3><p>Revolut Business a céges pénzügyeidhez.</p></div>
+            <div class="partner-actions"><a id="revolut-business-link" class="button secondary" target="_blank" rel="sponsored noopener noreferrer" aria-describedby="revolut-eligibility" hidden>Revolut Business megtekintése ↗</a><button id="revolut-unavailable" class="button secondary" type="button" disabled>Ajánlói link hamarosan</button></div>
+          </div>
+          <p class="partner-eligibility" id="revolut-eligibility">Magyar egyéni vállalkozóként jelenleg nem nyitható Revolut Business-számla. Céges számlanyitás előtt ellenőrizd a <a href="https://help.revolut.com/en-HU/help/setting-up-an-account/is-my-business-eligible/what-types-of-business-entities-are-supported/business/" target="_blank" rel="noopener noreferrer">támogatott vállalkozási formákat</a>.</p>
+          <p class="partner-disclosure">Ajánlói linken keresztüli regisztráció esetén az oldal üzemeltetője jutalmat kaphat. A számlanyitás és az esetleges ajánlói jutalom feltételeit a Revolut határozza meg.</p>
+        </aside>
+        <section class="card crossover" aria-labelledby="crossover-title">
+          <div class="section-heading"><h3 id="crossover-title">Hol fordul a mérleg?</h3><span class="badge neutral" id="crossover-ratio">45% költséghányad</span></div>
+          <p id="break-even-summary"></p>
+          <div id="break-even-details" class="break-even-details"></div>
+          <div class="chart-legend"><span class="kata-color" id="kata-legend">KATA</span><span class="flat-color">Átalányadó</span><span class="vszja-color">VSZJA</span></div>
+          <div id="comparison-chart" class="comparison-chart"></div>
+          <p class="input-hint">Vízszintesen: havi bevétel. Függőlegesen: adók és költségek után megmaradó havi összeg. A HIPA sávhatárainál ugrás lehet.</p>
+        </section>
+        <section class="card breakdown" aria-labelledby="breakdown-title">
+          <div class="section-heading"><h3 id="breakdown-title">Minden forint a helyén</h3><button class="text-button" id="export" type="button">CSV letöltése ↓</button></div>
+          <p class="section-subtitle">Éves összegek, ha a sor másként nem jelzi.</p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Az adózási formák részletes összehasonlítása, vízszintesen görgethető"><table id="comparison-table"><caption class="sr-only">KATA, átalányadózás és VSZJA éves összehasonlítása</caption><thead><tr><th scope="col">Tétel</th><th scope="col" id="kata-table-title">KATA</th><th scope="col">Átalányadó</th><th scope="col">VSZJA</th></tr></thead><tbody id="comparison-body"></tbody></table></div>
+          <p class="table-note">A költséghányad vélelmezett adózási költség, nem tényleges kiadás. A „zsebben marad” sor a megadott működési költségeket is levonja.</p>
+        </section>
+      </section>
+    </div>
+    <section class="regimes" aria-labelledby="regimes-title"><div class="section-heading"><h2 id="regimes-title">A számokon túl</h2><span class="section-subtitle">Melyik forma illik hozzád?</span></div><div class="three-grid">
+      <article class="card regime"><span class="regime-marker kata-color" id="kata-marker">01 / 2026</span><h3 id="kata-pros-title">KATA</h3><p>Egyszerűbb adminisztráció, szigorú feltételek.</p><ul class="pros" id="kata-pros"></ul><ul class="cons" id="kata-cons"></ul></article>
+      <article class="card regime"><span class="regime-marker flat-color">02 / VÉLELMEZETT KÖLTSÉGEK</span><h3>Átalányadózás</h3><p>Tevékenységi költséghányad alapján.</p><ul class="pros"><li>Mellékállásban az adómentes jövedelemrészig nincs SZJA, TB vagy szocho</li><li>Jogosultság esetén 80% vagy 90% költséghányad</li><li>Nincs tételes költségelszámolás</li></ul><ul class="cons"><li>Főállásban minimum járulékterhek</li><li>A költséghányad nem szabadon választható</li><li>A HIPA az adómentes jövedelem mellett is felmerülhet</li></ul></article>
+      <article class="card regime"><span class="regime-marker vszja-color">03 / TÉTELES ELSZÁMOLÁS</span><h3>VSZJA</h3><p>Igazolt költségekkel és vállalkozói kivéttel.</p><ul class="pros"><li>Elszámolható működési költség és értékcsökkenés</li><li>A kivét és a felhasznált szochokeret megadható</li><li>Jogosultság esetén egyszerűsített HIPA is választható</li></ul><ul class="cons"><li>Összetettebb nyilvántartás és könyvelés</li><li>A tényleges kiadás nem mindig azonos az adózási költséggel</li><li>Speciális korrekciókhoz könyvelői adatok szükségesek</li></ul></article>
+    </div></section>
+    <section class="methodology card" id="methodology" aria-labelledby="method-title"><div class="section-heading"><h2 id="method-title">Módszertan és források</h2><span class="badge neutral">Modellverzió: 2.1 · 2026.10.10.</span></div>
+      <p id="method-parameters"></p>
+      <p>Éves közteher-összehasonlítás, teljes és egyenletes működésre. A havi összegek éves átlagok. A „zsebben marad” sor mindhárom formánál a bevételből levonja ugyanazt a tényleges működési kiadást és az adott évre számított közterheket. A kivét belső pénzkivonás, ezért nem vonjuk le másodszor kiadásként.</p>
+      <details><summary>A számítás szabályai</summary><div class="method-grid">
+        <div><h3>KATA</h3><p>A 2026-os mód főállású, jogosult EV-re havi 50 000 Ft-ot, 18 milliós keretet és a felette fizetendő 40%-os különadót számol. Nyugdíjas, kiegészítő tevékenységet folytató EV-ként nem választható, taxis tevékenységnél sem. A kifizetői bevétel főszabály szerint kizáró, a taxis kivétel külön jelölhető. Az új tervezeti mód 2027-ben főállásra 100 000, mellékállásra és nyugdíjas jogállásra 50 000 Ft-tal és 22 milliós kerettel számol, ha a többi feltétel teljesül. A régi KATA tervezett folytatása nyugdíjasként továbbra sem elérhető. A kiegészítő adó a keretbe tartozó kifizetői bevétel 15%-ának a tételes adót meghaladó része.</p><p>Vegyes bevételnél, a keret felett csak igazolt megosztás alapján számolunk egyetlen KATA-eredményt. Ennek hiányában tartományt mutatunk. Az 50%-os ügyfélkoncentráció év végi megszűnést jelent, ezt az éves teher mellett jelezzük. Munkáltatói kizárás esetén teljes éves KATA-eredményt nem mutatunk.</p></div>
+        <div><h3>Átalányadó</h3><p>Jövedelem = bevétel × (1 − költséghányad). Adómentes rész: 6 × tárgyévi minimálbér. A fennmaradó jövedelem SZJA-ja 15%. Fő- és mellékállásban TB-je 18,5%, szochója 13%; főállásban az éves járulékalap legalább a megfelelő havi bérminimum tizenkétszerese. Nyugdíjas, kiegészítő tevékenység esetén saját TB-t és üzleti szochót nem számolunk. Az anyák kedvezményét érvényesítő nyugdíjasok 2026-os külön szochoszabálya nem része a kedvezmények nélküli modellnek. Ez az egyenletes bevételi modell éves közelítése; az időszakos göngyölítést és szünetelést nem helyettesíti.</p><p>Általános költséghányad: 2026-ban 45%, 2027-ben 50%. A magasabb kategóriákhoz és a bevételi jogosultsági határokhoz a törvényi feltételek teljesülése szükséges.</p></div>
+        <div><h3>VSZJA</h3><p>A vállalkozói kivét után 15% SZJA-t és a jogviszony szerinti TB-t, üzleti szochót számolunk. Nyugdíjas, kiegészítő tevékenységnél a kivét saját TB-je és üzleti szochója nulla a kedvezmények nélküli modellben. Az éves elszámolható működési költség, a kivét és a levonható üzleti adók csökkentik a vállalkozói jövedelmet. A kivét SZJA-ja és saját TB-je nem adóköltség. A 9%-os vállalkozói SZJA alapját a veszteség és a választott jövedelemminimum-kezelés is befolyásolja.</p><p>Az adózás utáni vállalkozói adóalap és a megadott osztalékalap-korrekció alapján 15% osztalék-SZJA-t számolunk. A 13%-os osztalékszocho nyugdíjasként is felmerülhet: csak a 24 × minimálbér jövedelmi keret még fel nem használt részére esik. A saját kivét és a megadott más jövedelmek nyugdíjasként is csökkentik a keretet, maga az adómentes nyugdíj azonban nem. A minimum járulékalap önmagában nem kivétjövedelem.</p><p>Az automatikus adóköltség becslés: az éves üzleti szocho és HIPA adóévi megfizetését feltételezi. A tényleges befizetések külön megadhatók. Értékcsökkenési és egyéb korrekciókat könyvelői adatokból kell kitölteni.</p></div>
+        <div><h3>HIPA és alkalmazási kör</h3><p>A választott egyszerűsített módszer mindhárom formánál azonos: 12/18/25 millió Ft bevételig településenként 2,5/6/8,5 millió Ft adóalap. Kizárólag kiskereskedelmi átalányadózónál a felső bevételi határ 120 millió Ft. Az arra nem jogosult vállalkozónál normál adóalappal számolunk. Normál módszerben a bevételből a megadott törvényes csökkentő tételeket vonjuk le, és a teljes megosztandó adóalapra alkalmazzuk az azonos helyi adókulcsot. A nyugdíjas jogállás önmagában nem ad HIPA-mentességet.</p><p>A nyugdíjas választás a Tbj. szerinti kiegészítő tevékenységre vonatkozik: saját jogú nyugdíjasra, illetve az öregségi nyugdíjkorhatárt betöltött özvegyi nyugdíjas EV-re. Nem kezelünk eltérő települési kulcsokat, helyi kedvezményeket, áfát, személyi és családi adó- vagy járulékkedvezményeket (ideértve az anyák kedvezményének külön szochoszabályait), külföldi biztosítási jogállást, évközi indulást, szünetelést, jogviszonyváltást, alkalmazotti közterheket, kamarai hozzájárulást és speciális adókedvezményeket. Az ezekkel érintett esetek külön számítást igényelnek.</p></div>
+      </div></details>
+      <details><summary>Fordulópont és grafikon</summary><p>A KATA és az átalányadó minden támogatott lineáris szakaszán algebrai egyenletből keressük az azonos éves közterhet. A sávhatároknál külön kezeljük az ugrásokat és az érvényességi tartomány végét. A grafikonon a jogilag kizárt vagy nem meghatározható eredmény nem szerepel. A 22 millió feletti vegyes bevételnél megadott kifizetői megosztást a grafikon állandónak feltételezi; ha ez nem áll rendelkezésre, a fordulópont-vizsgálat csak a biztosan számítható szakaszokra terjed ki. A kijelzés kerekített, a belső számítás nem.</p></details>
+      <details><summary>Hivatalos források és a tervezet állapota</summary><ul class="source-list">
+        <li><a href="https://njt.jog.gov.hu/jogszabaly/2025-426-20-22" target="_blank" rel="noopener noreferrer">426/2025. (XII. 23.) Korm. rendelet – 2026-os bérminimumok</a></li>
+        <li><a href="https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/100.-Az-egyeni-vallalkozok-atalanyadozasanak-alapveto-szabalyai-2026.-02.-20" target="_blank" rel="noopener noreferrer">NAV 100. – átalányadózás 2026</a></li>
+        <li><a href="https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/03.-Az-egyeni-vallalkozok-szja--es-jarulekkotelezettsege-2026.-08.-31." target="_blank" rel="noopener noreferrer">NAV 03. – vállalkozói SZJA és járulékok 2026</a></li>
+        <li><a href="https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/99.-Kisadozo-vallalkozok-teteles-adoja-kata-2026.-02.-20" target="_blank" rel="noopener noreferrer">NAV 99. – hatályos KATA 2026</a></li>
+        <li><a href="https://njt.jog.gov.hu/jogszabaly/1990-100-00-00" target="_blank" rel="noopener noreferrer">Helyi adókról szóló törvény – 39., 39/A. §</a></li>
+        <li><a href="https://njt.jog.gov.hu/jogszabaly/2018-52-00-00" target="_blank" rel="noopener noreferrer">Szocho tv. – 1., 2., 5. és 6. §</a></li>
+        <li><a href="https://njt.jog.gov.hu/jogszabaly/2019-122-00-00" target="_blank" rel="noopener noreferrer">Tbj. – kiegészítő tevékenység és saját jogú nyugdíjas jogállás</a></li>
+        <li><a href="https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/49.-A-szocialis-hozzajarulasi-ado-2026.-01.-16" target="_blank" rel="noopener noreferrer">NAV 49. – szochomentesség és osztalékszocho 2026</a></li>
+        <li><a href="https://nav.gov.hu/ado/szja/a-tobbgyermekes-nyugdijas-anyak-uj-szja-bevallasi-es-szochofizetesi-szabalyai" target="_blank" rel="noopener noreferrer">NAV – a nyugdíjas anyák kedvezményeinek külön szabályai</a></li>
+        <li><a href="https://njt.jog.gov.hu/jogszabaly/1995-117-00-00" target="_blank" rel="noopener noreferrer">Szja tv. – 49/B–53. § és 11. melléklet</a></li>
+        <li><a href="https://kormany.hu/dokumentumtar/tarsadalmi-egyeztetes-a-kisadozo-egyeni-vallalkozok-teteles-adojarol-szolo-torvenyjavaslatrol" target="_blank" rel="noopener noreferrer">KATA-egyeztetés – közzététel: 2026.10.06., határidő: 2026.10.14.</a></li>
+        <li><a href="https://kormany.hu/application/documents/6527f9fa-16c3-4245-a90b-95e4a91fdd13/download" target="_blank" rel="noopener noreferrer">KATA normatív tervezet – 2027-es és átmeneti szabályok</a></li>
+      </ul><p>A 2027-es mód egyeztetési tervezetet szimulál, szerkeszthető bérfeltételezésekkel. A főállású új KATA ellátási alapja 2027-ben 317 000 Ft/hó lenne; a nem főfoglalkozású nem válna biztosítottá e jogcímen. 2028-tól a tételes adó az előző évi minimálbérhez, az ellátási alap a tárgyévi minimálbérhez kötődne. Az átmeneti régi KATA összege 2027-ben 75 000, 2028-ban 100 000 Ft/hó; 2028-as számítást ez az eszköz nem végez.</p></details>
+    </section>
+  </main>
+  <footer class="site-footer container"><div><a class="brand" href="#"><span class="brand-icon" aria-hidden="true">év.</span><span>EV <strong>Mérleg</strong></span></a><p>Jobb döntések, átlátható számokból.</p></div><div class="support"><span>Hasznosnak találtad az eszközt? Hívj meg egy kávéra!</span><a id="coffee-link" class="button secondary" hidden target="_blank" rel="noopener noreferrer">☕ Meghívlak egy kávéra</a><button id="coffee-unavailable" class="button secondary" disabled title="A támogatás jelenleg nem elérhető.">☕ Támogatás hamarosan</button></div><p class="footer-note">2026-os éves kalkuláció és 2027-es tervezeti szimuláció · Nem hivatalos NAV adótanácsadás.</p></footer>
+</body>
+</html>
